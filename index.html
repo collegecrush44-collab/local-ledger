@@ -16,13 +16,12 @@
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
       
-      /* Global scrollbar removal */
       * {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
+        -ms-overflow-style: none;
+        scrollbar-width: none;
       }
       *::-webkit-scrollbar {
-        display: none; /* Chrome, Safari and Opera */
+        display: none;
       }
 
       body {
@@ -33,76 +32,58 @@
         overflow: hidden;
       }
       .dark body {
-        background-color: #020617; /* slate-950 */
-      }
-      .safe-bottom {
-        padding-bottom: env(safe-area-inset-bottom);
+        background-color: #020617;
       }
       
-      /* Animations */
+      /* Splash Screen Styles */
+      #splash-screen {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8fafc;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out;
+      }
+      .dark #splash-screen {
+        background-color: #020617;
+      }
+      .pulse-icon {
+        width: 80px;
+        height: 80px;
+        background: #2563eb;
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 32px;
+        box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.2);
+        animation: splash-pulse 2s infinite ease-in-out;
+      }
+      @keyframes splash-pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+      }
+      .splash-text {
+        margin-top: 24px;
+        font-weight: 900;
+        color: #1e293b;
+        letter-spacing: -0.025em;
+        font-size: 20px;
+      }
+      .dark .splash-text {
+        color: #f8fafc;
+      }
+
+      /* Native App Animations */
       @keyframes slideUp {
         from { transform: translateY(20px); opacity: 0; }
         to { transform: translateY(0); opacity: 1; }
       }
-
-      @keyframes pulse-subtle {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-      }
-
-      @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-5px); }
-        75% { transform: translateX(5px); }
-      }
-
-      @keyframes bell-wiggle {
-        0%, 100% { transform: rotate(0); }
-        25% { transform: rotate(15deg); }
-        75% { transform: rotate(-15deg); }
-      }
-
-      @keyframes coin-pop {
-        0% { transform: scale(0) translateY(0); opacity: 0; }
-        50% { transform: scale(1.2) translateY(-10px); opacity: 1; }
-        100% { transform: scale(1) translateY(0); opacity: 1; }
-      }
-
-      .animate-slide-up {
-        animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
-
-      .animate-pulse-subtle {
-        animation: pulse-subtle 2s infinite ease-in-out;
-      }
-
-      .animate-shake {
-        animation: shake 0.3s ease-in-out;
-      }
-
-      .animate-bell {
-        animation: bell-wiggle 0.5s ease-in-out;
-      }
-
-      .animate-coin {
-        animation: coin-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-      }
-
-      /* Sequential delay for cards */
-      .delay-1 { animation-delay: 0.05s; }
-      .delay-2 { animation-delay: 0.1s; }
-      .delay-3 { animation-delay: 0.15s; }
-      .delay-4 { animation-delay: 0.2s; }
-
-      /* Hide arrows/spin-buttons in number inputs */
-      input::-webkit-outer-spin-button,
-      input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-      }
-      input[type=number] {
-        -moz-appearance: textfield;
-      }
+      .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       
       input[type="date"]::-webkit-calendar-picker-indicator {
         background: transparent;
@@ -120,18 +101,27 @@
 <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom": "https://esm.sh/react-dom@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
-    "recharts": "https://esm.sh/recharts@2.12.0?external=react,react-dom",
-    "react/": "https://esm.sh/react@18.2.0/",
-    "react-dom/": "https://esm.sh/react-dom@18.2.0/"
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
   }
 }
 </script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <!-- Initial Loading State (Replaced by React) -->
+        <div id="splash-screen">
+            <div class="pulse-icon">
+                <i class="fa-solid fa-wallet"></i>
+            </div>
+            <div class="splash-text">Local Ledger</div>
+        </div>
+    </div>
+    <!-- Entry point for Vite/Vercel build -->
+    <script type="module" src="./index.tsx"></script>
 </body>
 </html>
