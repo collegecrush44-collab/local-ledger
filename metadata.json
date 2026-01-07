@@ -1,0 +1,7 @@
+{
+  "name": "Local Ledger - Personal Finance Tracker",
+  "description": "A clean, efficient mobile-first personal finance tracker to manage income, expenses, loans, and borrowed money with automatic balance calculations.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
