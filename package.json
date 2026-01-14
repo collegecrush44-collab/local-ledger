@@ -4,11 +4,14 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "echo 'No build step required for browser-native ESM'"
+    "build": "mkdir -p dist/client && cp -r index.html index.tsx sw.js manifest.json metadata.json App.tsx types.ts utils.ts db.ts components hooks dist/client/"
   },
   "dependencies": {
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "recharts": "2.12.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
   }
 }
