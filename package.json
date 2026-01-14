@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "mkdir -p dist/client && cp -r index.html index.tsx sw.js manifest.json metadata.json App.tsx types.ts utils.ts db.ts components hooks dist/client/"
+    "build": "npm run remix:build || npm run build:local",
+    "remix:build": "remix vite:build",
+    "build:local": "mkdir -p dist/client && cp -r index.html index.tsx sw.js manifest.json metadata.json App.tsx types.ts utils.ts db.ts components hooks dist/client/"
   },
   "dependencies": {
     "react": "18.2.0",
@@ -12,6 +14,7 @@
     "recharts": "2.12.0"
   },
   "devDependencies": {
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "@remix-run/dev": "^2.0.0"
   }
 }
