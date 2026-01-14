@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { Card, Heading, SubHeading, CountUp } from './Shared.tsx';
-import { formatCurrency, getBorrowedStatus } from '../utils.ts';
+import { getBorrowedStatus } from '../utils.ts';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { FinancialReminder, FinanceData, ViewType } from '../types.ts';
 
+// Updated DashboardProps to include onToggleTheme and support optional period controls
 interface DashboardProps {
   data: FinanceData;
   totals: {
@@ -14,8 +15,9 @@ interface DashboardProps {
     monthlyBorrowed: number;
   };
   remainingBalance: number;
-  selectedMonth: string;
-  onMonthChange: (month: string) => void;
+  selectedMonth?: string;
+  onMonthChange?: (month: string) => void;
+  onToggleTheme?: () => void;
   borrowed: any[];
   reminders: FinancialReminder[];
   onViewAlerts: () => void;
@@ -40,55 +42,102 @@ const Dashboard: React.FC<DashboardProps> = ({
   const displayData = chartData.length > 0 ? chartData : [{ name: 'Empty', value: 1, color: '#e2e8f0' }];
   const savingsPercent = totals.income > 0 ? Math.round((remainingBalance / totals.income) * 100) : 0;
 
+  // Provide a fallback if selectedMonth is not passed from the parent
+  const displayMonth = selectedMonth || new Date().toISOString().slice(0, 7);
+  const userName = data.profile.name || 'Friend';
+
   return (
     <div className="space-y-6 pb-10">
+      {/* Personalized Greeting */}
+      <div className="px-1 animate-screen-entry">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-sm font-black text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full uppercase tracking-widest">Hi, {userName} 👋</span>
+        </div>
+        <Heading className="text-2xl font-black text-slate-800 dark:text-white">
+          Here's your summary
+        </Heading>
+      </div>
+
       {/* Month Picker Header */}
       <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-[2rem] shadow-sm border border-slate-50 dark:border-slate-800 animate-slide-up">
         <button 
           onClick={() => {
-            const d = new Date(selectedMonth);
-            d.setMonth(d.getMonth() - 1);
-            onMonthChange(d.toISOString().slice(0, 7));
+            if (onMonthChange && selectedMonth) {
+              const d = new Date(selectedMonth);
+              d.setMonth(d.getMonth() - 1);
+              onMonthChange(d.toISOString().slice(0, 7));
+            }
           }}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-blue-600 transition-colors active:scale-90"
+          disabled={!onMonthChange || !selectedMonth}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-blue-600 transition-colors active:scale-90 disabled:opacity-30"
         >
           <i className="fa-solid fa-chevron-left"></i>
         </button>
         <div className="text-center">
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">SELECTED PERIOD</div>
           <div className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight">
-            {new Date(selectedMonth).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+            {new Date(displayMonth).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
           </div>
         </div>
         <button 
           onClick={() => {
-            const d = new Date(selectedMonth);
-            d.setMonth(d.getMonth() + 1);
-            onMonthChange(d.toISOString().slice(0, 7));
+            if (onMonthChange && selectedMonth) {
+              const d = new Date(selectedMonth);
+              d.setMonth(d.getMonth() + 1);
+              onMonthChange(d.toISOString().slice(0, 7));
+            }
           }}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-blue-600 transition-colors active:scale-90"
+          disabled={!onMonthChange || !selectedMonth}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-blue-600 transition-colors active:scale-90 disabled:opacity-30"
         >
           <i className="fa-solid fa-chevron-right"></i>
         </button>
       </div>
 
-      {/* Summary Card */}
-      <Card className="rounded-[2.5rem] p-6 bg-white dark:bg-slate-900 border-none shadow-sm animate-slide-up delay-1">
-        <div className="flex divide-x divide-slate-100 dark:divide-slate-800">
-          <div className="flex-1 pr-4" onClick={() => onNavigate('income')}>
+      {/* Summary Card with Visual Pillar Graphics */}
+      <div className="grid grid-cols-2 gap-4 animate-slide-up delay-1">
+        {/* Income Pillar */}
+        <Card 
+          className="relative rounded-[2.5rem] p-6 bg-white dark:bg-slate-900 border-none shadow-sm overflow-hidden group cursor-pointer active:scale-95 transition-all"
+          onClick={() => onNavigate('income')}
+        >
+          <div className="relative z-10">
             <SubHeading className="text-[9px] font-black opacity-60">MONTHLY INCOME</SubHeading>
-            <div className="text-2xl font-black text-slate-800 dark:text-slate-100 truncate">
+            <div className="text-xl font-black text-slate-800 dark:text-slate-100 truncate mt-1">
               <CountUp value={totals.income} prefix="₹" />
             </div>
           </div>
-          <div className="flex-1 pl-4" onClick={() => onNavigate('chits')}>
+          {/* Animated Background Pillar */}
+          <div className="absolute right-0 bottom-0 top-0 w-1.5 bg-slate-100 dark:bg-slate-800">
+             <div 
+              className="absolute bottom-0 left-0 right-0 bg-blue-600 transition-all duration-1000 ease-out delay-100 rounded-t-full shadow-[0_0_10px_rgba(37,99,235,0.4)]"
+              style={{ height: totals.income > 0 ? '100%' : '0%' }}
+             />
+          </div>
+          <div className="absolute -bottom-2 -left-2 w-16 h-16 bg-blue-50 dark:bg-blue-900/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
+        </Card>
+
+        {/* Savings Jar Pillar */}
+        <Card 
+          className="relative rounded-[2.5rem] p-6 bg-white dark:bg-slate-900 border-none shadow-sm overflow-hidden group cursor-pointer active:scale-95 transition-all"
+          onClick={() => onNavigate('chits')}
+        >
+          <div className="relative z-10">
             <SubHeading className="text-[9px] font-black opacity-60">EST. SAVINGS</SubHeading>
-            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-500 truncate">
+            <div className="text-xl font-black text-emerald-600 dark:text-emerald-500 truncate mt-1">
               <CountUp value={remainingBalance} prefix="₹" />
             </div>
           </div>
-        </div>
-      </Card>
+          {/* Animated Jar Fill Visual */}
+          <div className="absolute right-0 bottom-0 top-0 w-1.5 bg-slate-100 dark:bg-slate-800">
+             <div 
+              className="absolute bottom-0 left-0 right-0 bg-emerald-500 transition-all duration-1000 ease-out delay-200 rounded-t-full shadow-[0_0_10px_rgba(16,185,129,0.4)]"
+              style={{ height: `${savingsPercent}%` }}
+             />
+          </div>
+          <div className="absolute -bottom-2 -left-2 w-16 h-16 bg-emerald-50 dark:bg-emerald-900/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
+        </Card>
+      </div>
 
       {/* Main Chart */}
       <Card className="relative p-8 flex flex-col items-center justify-center rounded-[3rem] border-none bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/40 dark:shadow-none animate-slide-up delay-2">

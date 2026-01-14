@@ -1,11 +1,11 @@
+
 import React, { useState } from 'react';
-import { Card, Heading, Button, ConfirmModal } from './Shared.tsx';
-import { formatCurrency } from '../utils.ts';
+import { Card, Heading, Button, ConfirmModal, Input } from './Shared.tsx';
+import { formatCurrency, validateAmount, validateString, isTodayOrPast } from '../utils.ts';
 import { Income, IncomeCategory } from '../types.ts';
 
 interface IncomeSectionProps {
   incomes: Income[];
-  selectedMonth: string;
   customCategories: string[];
   onAdd: (income: Omit<Income, 'id' | 'lastUpdated'>) => void;
   onUpdate: (id: string, income: Omit<Income, 'id' | 'lastUpdated'>) => void;
@@ -13,7 +13,7 @@ interface IncomeSectionProps {
   onAddCustomCategory: (category: string) => void;
 }
 
-const IncomeSection: React.FC<IncomeSectionProps> = ({ incomes, selectedMonth, customCategories, onAdd, onUpdate, onDelete, onAddCustomCategory }) => {
+const IncomeSection: React.FC<IncomeSectionProps> = ({ incomes, customCategories, onAdd, onUpdate, onDelete, onAddCustomCategory }) => {
   const [showForm, setShowForm] = useState(incomes.length === 0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -27,6 +27,8 @@ const IncomeSection: React.FC<IncomeSectionProps> = ({ incomes, selectedMonth, c
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
 
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
   const todayStr = new Date().toISOString().split('T')[0];
 
   const resetForm = () => {
@@ -38,20 +40,24 @@ const IncomeSection: React.FC<IncomeSectionProps> = ({ incomes, selectedMonth, c
     setShowForm(incomes.length === 0);
     setShowAddCategory(false);
     setNewCategoryName('');
+    setIsSubmitted(false);
   };
+
+  const amountValidation = validateAmount(amount);
+  const dateValidation = isTodayOrPast(date);
+  const categoryValidation = validateString(category);
+  
+  const isFormValid = amountValidation.isValid && dateValidation && categoryValidation.isValid;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parsedAmount = parseFloat(amount);
+    setIsSubmitted(true);
     
-    if (parsedAmount < 0) {
-      alert("Amount cannot be negative.");
-      return;
-    }
+    if (!isFormValid) return;
 
     const payload = {
-      category,
-      amount: parsedAmount || 0,
+      category: category.trim(),
+      amount: parseFloat(amount),
       date,
       notes: notes.trim() || undefined
     };
@@ -60,13 +66,25 @@ const IncomeSection: React.FC<IncomeSectionProps> = ({ incomes, selectedMonth, c
       onUpdate(editingId, payload);
     } else {
       onAdd(payload);
+      setTimeout(() => {
+        document.getElementById('income-list-header')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
     resetForm();
     setShowForm(false);
   };
 
   const handleAddCategory = () => {
-    if (newCategoryName.trim()) {
+    const valid = validateString(newCategoryName);
+    if (valid.isValid) {
+      const exists = [...['Salary', 'Business', 'Freelance', 'Investment', 'Other'], ...customCategories]
+        .some(c => c.toLowerCase() === newCategoryName.trim().toLowerCase());
+      
+      if (exists) {
+        alert("Category already exists");
+        return;
+      }
+
       onAddCustomCategory(newCategoryName.trim());
       setCategory(newCategoryName.trim());
       setNewCategoryName('');
@@ -81,7 +99,7 @@ const IncomeSection: React.FC<IncomeSectionProps> = ({ incomes, selectedMonth, c
     setDate(income.date);
     setNotes(income.notes || '');
     setShowForm(true);
-    // Auto-scroll the main scroll container
+    setIsSubmitted(false);
     document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -123,13 +141,13 @@ const IncomeSection: React.FC<IncomeSectionProps> = ({ incomes, selectedMonth, c
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Income Category</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="flex flex-wrap gap-2">
                 {allCategories.map(cat => (
                   <button
                     key={cat}
                     type="button"
                     onClick={() => setCategory(cat)}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all truncate ${category === cat ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-100 dark:shadow-none' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'}`}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all truncate ${category === cat ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'}`}
                   >
                     {cat}
                   </button>
@@ -138,188 +156,101 @@ const IncomeSection: React.FC<IncomeSectionProps> = ({ incomes, selectedMonth, c
                   <button
                     type="button"
                     onClick={() => setShowAddCategory(true)}
-                    className="py-2 px-3 rounded-xl text-xs font-bold border border-dashed border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 flex items-center justify-center gap-1 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    className="py-2 px-3 rounded-xl text-xs font-bold border border-dashed border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 flex items-center justify-center gap-1"
                   >
                     <i className="fa-solid fa-plus text-[10px]"></i>
-                    OTHER
+                    NEW
                   </button>
                 ) : (
-                  <div className="col-span-2 flex gap-2 animate-in slide-in-from-left-2 duration-200">
+                  <div className="w-full flex gap-2 animate-in slide-in-from-left-2 duration-200">
                     <input 
                       autoFocus
                       placeholder="Category name"
                       value={newCategoryName}
                       onChange={e => setNewCategoryName(e.target.value)}
-                      className="flex-1 bg-white dark:bg-slate-950 border border-blue-500 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"
+                      className="flex-1 bg-white dark:bg-slate-950 border border-blue-500 rounded-xl px-4 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"
                     />
-                    <button 
-                      type="button" 
+                    <Button 
                       onClick={handleAddCategory}
-                      className="px-3 bg-blue-600 text-white rounded-xl text-xs font-bold"
+                      disabled={!validateString(newCategoryName).isValid}
+                      className="!px-4 !py-2"
                     >
                       ADD
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => setShowAddCategory(false)}
-                      className="text-slate-400"
-                    >
-                      <i className="fa-solid fa-xmark"></i>
-                    </button>
+                    </Button>
+                    <button type="button" onClick={() => setShowAddCategory(false)} className="text-slate-400"><i className="fa-solid fa-xmark"></i></button>
                   </div>
                 )}
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Amount</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xl font-black"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Date</label>
-                <input
-                  type="date"
-                  value={date}
-                  max={todayStr}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-semibold appearance-none"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Notes (Optional)</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Details about this income..."
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3 text-slate-600 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm min-h-[80px]"
+              <Input
+                label="Amount"
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                error={isSubmitted ? amountValidation.error : undefined}
+                required
+              />
+              <Input
+                label="Date"
+                type="date"
+                value={date}
+                max={todayStr}
+                onChange={(e) => setDate(e.target.value)}
+                error={isSubmitted && !dateValidation ? "Date cannot be in the future" : undefined}
+                required
               />
             </div>
 
-            <Button type="submit" className="w-full py-4 text-lg">
-              {editingId ? 'Update Income Details' : 'Save Income Source'}
+            <Input
+              label="Notes (Optional)"
+              type="textarea"
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Source details..."
+            />
+
+            <Button type="submit" disabled={isSubmitted && !isFormValid} className="w-full py-4 text-base">
+              {editingId ? 'Update Income' : 'Save Income'}
             </Button>
           </form>
         </Card>
       )}
 
-      {/* Summary Widget */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-700 dark:to-blue-600 p-6 rounded-3xl shadow-xl shadow-blue-200 dark:shadow-none text-white flex justify-between items-center relative overflow-hidden ring-4 ring-blue-50 dark:ring-blue-900/10 transition-all">
-        <div className="z-10">
+      {/* Summary and List remain similar with validation applied */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-6 rounded-3xl text-white flex justify-between items-center shadow-xl">
+        <div>
           <div className="text-blue-100 text-[10px] font-bold uppercase tracking-widest opacity-90 mb-1">Total Monthly Income</div>
           <div className="text-3xl font-bold tracking-tight">{formatCurrency(totalIncome)}</div>
         </div>
-        <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-xl backdrop-blur-md border border-white/30 z-10">
+        <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-xl backdrop-blur-md border border-white/30">
           <i className="fa-solid fa-wallet"></i>
         </div>
-        <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/5 rounded-full blur-2xl"></div>
       </div>
 
-      {/* Search Bar */}
-      {incomes.length > 0 && (
-        <div className="relative group px-1">
-          <i className="fa-solid fa-magnifying-glass absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 text-sm group-focus-within:text-blue-500 transition-colors"></i>
-          <input 
-            type="text"
-            placeholder="Search by category or amount..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl pl-12 pr-10 py-3.5 text-sm font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
-          />
-          {searchTerm && (
-            <button 
-              onClick={() => setSearchTerm('')}
-              className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-600 dark:hover:text-slate-100 transition-colors"
-            >
-              <i className="fa-solid fa-circle-xmark"></i>
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Income List */}
-      <div className="space-y-3">
-        {incomes.length === 0 ? (
-          !showForm && (
-            <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-100 dark:border-slate-800 transition-colors">
-              <i className="fa-solid fa-money-bill-transfer text-3xl text-slate-200 dark:text-slate-800 mb-2"></i>
-              <p className="text-slate-400 dark:text-slate-600 text-sm font-medium">No income sources added yet</p>
-            </div>
-          )
-        ) : filteredIncomes.length === 0 ? (
-          <div className="text-center py-12 text-slate-400 dark:text-slate-600 font-bold uppercase tracking-widest text-[10px]">
-            <i className="fa-solid fa-face-meh mb-2 block text-2xl"></i>
-            No results found for "{searchTerm}"
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3">
-            {[...filteredIncomes].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(income => (
-              <div 
-                key={income.id}
-                className={`group bg-white dark:bg-slate-900 px-5 py-4 rounded-3xl border transition-all ${editingId === income.id ? 'border-blue-500 ring-4 ring-blue-50 dark:ring-blue-900/20 shadow-md' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 shadow-sm'}`}
-              >
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors border border-slate-100 dark:border-slate-800">
-                      <i className={`fa-solid ${income.category === 'Salary' ? 'fa-building-columns' : income.category === 'Business' ? 'fa-shop' : income.category === 'Freelance' ? 'fa-laptop-code' : income.category === 'Investment' ? 'fa-chart-line' : 'fa-coins'} text-lg`}></i>
-                    </div>
-                    <div>
-                      <div className="font-bold text-slate-800 dark:text-slate-200 text-base">{income.category}</div>
-                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">
-                        {new Date(income.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }).toUpperCase()}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    <div className="font-bold text-slate-900 dark:text-slate-100 text-lg leading-none">{formatCurrency(income.amount)}</div>
-                    <div className="flex gap-3 justify-end mt-2 opacity-30 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={() => startEdit(income)} 
-                        className="text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" 
-                        title="Edit"
-                      >
-                        <i className="fa-solid fa-pen-to-square text-sm"></i>
-                      </button>
-                      {editingId !== income.id && (
-                        <button 
-                          onClick={() => setDeleteId(income.id)} 
-                          className="text-slate-400 dark:text-slate-500 hover:text-rose-500 transition-colors" 
-                          title="Delete"
-                        >
-                          <i className="fa-solid fa-trash-can text-sm"></i>
-                        </button>
-                      )}
-                    </div>
-                  </div>
+      {/* Income List... */}
+      <div className="space-y-3" id="income-list-header">
+        {filteredIncomes.map(income => (
+           <div key={income.id} className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex justify-between items-center group">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400"><i className="fa-solid fa-coins"></i></div>
+                <div>
+                  <div className="font-bold text-slate-800 dark:text-slate-100">{income.category}</div>
+                  <div className="text-[10px] font-bold text-slate-400">{income.date}</div>
                 </div>
-                {income.notes && (
-                  <div className="mt-3 pt-2 border-t border-slate-50 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-500 italic">
-                    <i className="fa-solid fa-note-sticky mr-1 opacity-50"></i>
-                    {income.notes}
-                  </div>
-                )}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="p-5 bg-slate-50 dark:bg-slate-900/50 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl flex gap-4 text-slate-500 dark:text-slate-400 text-sm leading-snug transition-colors">
-        <i className="fa-solid fa-circle-info text-blue-400 mt-1 flex-shrink-0"></i>
-        <span>Add all regular and side income here. Your "Savings" in the dashboard is what's left after all bills are paid.</span>
+              <div className="text-right">
+                <div className="font-bold text-slate-900 dark:text-white">{formatCurrency(income.amount)}</div>
+                <div className="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                   <button onClick={() => startEdit(income)} className="text-slate-400 hover:text-blue-500"><i className="fa-solid fa-pen text-xs"></i></button>
+                   <button onClick={() => setDeleteId(income.id)} className="text-slate-400 hover:text-rose-500"><i className="fa-solid fa-trash text-xs"></i></button>
+                </div>
+              </div>
+           </div>
+        ))}
       </div>
 
       <ConfirmModal 
@@ -327,7 +258,7 @@ const IncomeSection: React.FC<IncomeSectionProps> = ({ incomes, selectedMonth, c
         onClose={() => setDeleteId(null)}
         onConfirm={() => deleteId && onDelete(deleteId)}
         title="Delete Income?"
-        message="Are you sure you want to remove this income record? This will adjust your monthly budget."
+        message="This record will be permanently removed from your dashboard."
       />
     </div>
   );

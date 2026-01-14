@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, Heading, Input, Button, SubHeading, ConfirmModal } from './Shared.tsx';
 import { formatCurrency } from '../utils.ts';
@@ -5,7 +6,6 @@ import { Expense } from '../types.ts';
 
 interface ExpenseProps {
   expenses: Expense[];
-  selectedMonth: string;
   customCategories: string[];
   onAdd: (expense: Omit<Expense, 'id'>) => void;
   onUpdate: (id: string, expense: Omit<Expense, 'id'>) => void;
@@ -13,7 +13,7 @@ interface ExpenseProps {
   onAddCustomCategory: (category: string) => void;
 }
 
-const ExpenseSection: React.FC<ExpenseProps> = ({ expenses, selectedMonth, customCategories, onAdd, onUpdate, onDelete, onAddCustomCategory }) => {
+const ExpenseSection: React.FC<ExpenseProps> = ({ expenses, customCategories, onAdd, onUpdate, onDelete, onAddCustomCategory }) => {
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [category, setCategory] = useState('Rent');
@@ -47,6 +47,10 @@ const ExpenseSection: React.FC<ExpenseProps> = ({ expenses, selectedMonth, custo
         setEditingId(null);
       } else {
         onAdd(payload);
+        // Scroll to list after adding new entry
+        setTimeout(() => {
+          document.getElementById('expense-list-header')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
       }
       resetForm();
     }
@@ -77,7 +81,7 @@ const ExpenseSection: React.FC<ExpenseProps> = ({ expenses, selectedMonth, custo
     setDate(expense.date);
     setCategory(expense.category);
     setNotes(expense.notes || '');
-    // Scroll the main container to show the form at top
+    // Smooth scroll to top of the scrollable main container
     document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -107,7 +111,7 @@ const ExpenseSection: React.FC<ExpenseProps> = ({ expenses, selectedMonth, custo
     <div className="space-y-6">
       <Heading>{editingId ? 'Edit Bill' : 'Fixed Bills & Expenses'}</Heading>
       
-      <Card className={editingId ? 'border-blue-50 ring-2 ring-blue-50 dark:ring-blue-900/40 bg-blue-50/20 dark:bg-blue-900/10' : 'shadow-xl shadow-slate-200/50 dark:shadow-none'}>
+      <Card className={editingId ? 'border-blue-500 ring-2 ring-blue-50 dark:ring-blue-900/40 bg-blue-50/20 dark:bg-blue-900/10' : 'shadow-xl shadow-slate-200/50 dark:shadow-none'}>
         <div className="flex justify-between items-center mb-4">
           <SubHeading>{editingId ? 'Updating Expense' : 'Add Recurring Bill'}</SubHeading>
           {editingId && (
@@ -207,7 +211,7 @@ const ExpenseSection: React.FC<ExpenseProps> = ({ expenses, selectedMonth, custo
         </form>
       </Card>
 
-      <div className="space-y-4">
+      <div className="space-y-4" id="expense-list-header">
         <div className="flex justify-between items-end px-2">
           <Heading className="text-lg">Monthly List</Heading>
           <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-3 py-1 rounded-full text-xs font-bold border border-blue-100 dark:border-blue-800/40">
@@ -281,7 +285,7 @@ const ExpenseSection: React.FC<ExpenseProps> = ({ expenses, selectedMonth, custo
                     >
                       <i className="fa-solid fa-pen-to-square text-sm"></i>
                     </button>
-                    {editingId !== expense.id && (
+                    {!editingId && (
                       <button 
                         onClick={() => setDeleteId(expense.id)}
                         className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-all"

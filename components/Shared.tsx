@@ -1,7 +1,89 @@
-import React, { useEffect, useState, useRef } from 'react';
 
-export const Card: React.FC<{ children: React.ReactNode, className?: string }> = ({ children, className = '' }) => (
-  <div className={`bg-white dark:bg-slate-900 rounded-2xl shadow-sm dark:shadow-none border border-slate-100 dark:border-slate-800/60 p-5 ${className}`}>
+import React, { useEffect, useState } from 'react';
+
+export const CountUp: React.FC<{ value: number, prefix?: string }> = ({ value, prefix = '' }) => {
+  const [displayValue, setDisplayValue] = React.useState(0);
+  
+  React.useEffect(() => {
+    let startTimestamp: number | null = null;
+    const startValue = displayValue;
+    const duration = 1000;
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      setDisplayValue(Math.floor(progress * (value - startValue) + startValue));
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+
+    window.requestAnimationFrame(step);
+  }, [value]);
+
+  return <span>{prefix}{displayValue.toLocaleString('en-IN')}</span>;
+};
+
+export const CelebrationOverlay: React.FC<{ 
+  isOpen: boolean; 
+  onClose: () => void;
+  message: string;
+}> = ({ isOpen, onClose, message }) => {
+  const [confetti, setConfetti] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const colors = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+      const newConfetti = Array.from({ length: 50 }).map((_, i) => ({
+        id: i,
+        left: Math.random() * 100,
+        delay: Math.random() * 2,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      }));
+      setConfetti(newConfetti);
+      const timer = setTimeout(onClose, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-blue-600/90 dark:bg-slate-950/95 backdrop-blur-md overflow-hidden animate-in fade-in duration-300">
+      {confetti.map(c => (
+        <div 
+          key={c.id} 
+          className="confetti" 
+          style={{ 
+            left: `${c.left}%`, 
+            backgroundColor: c.color, 
+            animationDelay: `${c.delay}s`,
+            borderRadius: Math.random() > 0.5 ? '50%' : '2px'
+          }}
+        />
+      ))}
+      <div className="relative z-10 text-center animate-pop">
+        <div className="w-24 h-24 bg-white text-blue-600 rounded-[2.5rem] flex items-center justify-center text-5xl mx-auto mb-8 shadow-2xl">
+          <i className="fa-solid fa-trophy"></i>
+        </div>
+        <h2 className="text-4xl font-black text-white mb-4 tracking-tight uppercase">Goal Achieved!</h2>
+        <p className="text-blue-100 text-lg font-bold max-w-xs mx-auto leading-relaxed">{message}</p>
+        <button 
+          onClick={onClose}
+          className="mt-12 px-10 py-4 bg-white text-blue-600 font-black rounded-3xl shadow-xl active:scale-95 transition-all text-xs uppercase tracking-widest"
+        >
+          GREAT!
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export const Card: React.FC<{ children: React.ReactNode, className?: string, onClick?: () => void }> = ({ children, className = '', onClick }) => (
+  <div 
+    onClick={onClick}
+    className={`bg-white dark:bg-slate-900 rounded-2xl shadow-sm dark:shadow-none border border-slate-100 dark:border-slate-800/60 p-5 ${onClick ? 'cursor-pointer' : ''} ${className}`}
+  >
     {children}
   </div>
 );
@@ -14,15 +96,32 @@ export const SubHeading: React.FC<{ children: React.ReactNode, className?: strin
   <h3 className={`text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider ${className}`}>{children}</h3>
 );
 
-export const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> & { hasError?: boolean }> = ({ hasError, ...props }) => {
-  const isTextArea = (props as any).type === undefined && props.children === undefined && (props as any).rows !== undefined;
-  
-  const className = `w-full bg-slate-100 dark:bg-slate-800/60 border-none rounded-[1.25rem] px-5 py-4 text-slate-900 dark:text-slate-100 font-bold placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all ${hasError ? 'animate-shake ring-2 ring-rose-500/50' : ''} ${props.className || ''}`;
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> {
+  error?: string;
+  label?: string;
+  rows?: number;
+}
 
-  if (isTextArea) {
-    return <textarea {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)} className={className} />;
-  }
-  return <input {...(props as React.InputHTMLAttributes<HTMLInputElement>)} className={className} />;
+export const Input: React.FC<InputProps> = ({ error, label, ...props }) => {
+  const isTextArea = (props as any).rows !== undefined;
+  
+  // Standardized height and padding to prevent font clipping of bold text
+  const baseClass = `w-full bg-slate-50/50 dark:bg-slate-950/50 border rounded-2xl px-5 py-4 text-slate-900 dark:text-slate-100 font-bold placeholder:text-slate-300 dark:placeholder:text-slate-700 focus:outline-none focus:ring-2 transition-all shadow-inner dark:shadow-none leading-[1.2] min-h-[58px] flex items-center`;
+  const stateClass = error 
+    ? 'border-rose-500 ring-rose-500/10 focus:ring-rose-500/30' 
+    : 'border-slate-100 dark:border-slate-800 focus:ring-blue-500';
+
+  return (
+    <div className="space-y-1.5 w-full">
+      {label && <label className="text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest ml-1">{label}</label>}
+      {isTextArea ? (
+        <textarea {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)} className={`${baseClass} ${stateClass} ${props.className || ''}`} />
+      ) : (
+        <input {...(props as React.InputHTMLAttributes<HTMLInputElement>)} className={`${baseClass} ${stateClass} ${props.className || ''}`} />
+      )}
+      {error && <p className="text-[10px] font-black text-rose-500 uppercase tracking-tight ml-2">{error}</p>}
+    </div>
+  );
 };
 
 export const Button: React.FC<{ 
@@ -31,9 +130,8 @@ export const Button: React.FC<{
   variant?: 'primary' | 'danger' | 'secondary',
   className?: string,
   type?: 'button' | 'submit',
-  isLoading?: boolean,
-  isSuccess?: boolean
-}> = ({ children, onClick, variant = 'primary', className = '', type = 'button', isSuccess }) => {
+  disabled?: boolean
+}> = ({ children, onClick, variant = 'primary', className = '', type = 'button', disabled }) => {
   const styles = {
     primary: 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/30 dark:shadow-none',
     danger: 'bg-rose-500 text-white hover:bg-rose-600 shadow-lg shadow-rose-500/20 dark:shadow-none',
@@ -44,43 +142,12 @@ export const Button: React.FC<{
     <button
       type={type}
       onClick={onClick}
-      className={`px-6 py-3 rounded-2xl font-bold transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 ${isSuccess ? 'bg-emerald-500 text-white shadow-emerald-500/20' : styles[variant]} ${className}`}
+      disabled={disabled}
+      className={`px-6 py-3 rounded-2xl font-bold transition-all active:scale-95 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed ${styles[variant]} ${className}`}
     >
-      {isSuccess ? <i className="fa-solid fa-check animate-coin"></i> : children}
+      {children}
     </button>
   );
-};
-
-export const CountUp: React.FC<{ value: number, prefix?: string }> = ({ value, prefix = '' }) => {
-  const [displayValue, setDisplayValue] = useState(0);
-  const countRef = useRef<number>(0);
-  const duration = 1000; // ms
-
-  useEffect(() => {
-    let startTimestamp: number | null = null;
-    const endValue = value;
-    const startValue = countRef.current;
-
-    const step = (timestamp: number) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      const current = Math.floor(progress * (endValue - startValue) + startValue);
-      setDisplayValue(current);
-      if (progress < 1) {
-        window.requestAnimationFrame(step);
-      } else {
-        countRef.current = endValue;
-      }
-    };
-
-    window.requestAnimationFrame(step);
-  }, [value]);
-
-  const formatted = new Intl.NumberFormat('en-IN', {
-    maximumFractionDigits: 0,
-  }).format(displayValue);
-
-  return <span>{prefix}{formatted}</span>;
 };
 
 export const ConfirmModal: React.FC<{
@@ -109,7 +176,7 @@ export const ConfirmModal: React.FC<{
               onClick={() => { onConfirm(); onClose(); }}
               className="w-full py-3.5 bg-rose-500 text-white font-bold rounded-2xl hover:bg-rose-600 active:scale-95 transition-all shadow-lg shadow-rose-100 dark:shadow-none"
             >
-              Delete Record
+              Confirm
             </button>
             <button 
               onClick={onClose}
@@ -120,87 +187,6 @@ export const ConfirmModal: React.FC<{
           </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-export const CelebrationOverlay: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  message: string;
-}> = ({ isOpen, onClose, title, message }) => {
-  const [particles, setParticles] = useState<{ id: number, x: number, color: string, delay: number, size: number }[]>([]);
-
-  useEffect(() => {
-    if (isOpen) {
-      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-      const newParticles = Array.from({ length: 40 }).map((_, i) => ({
-        id: i,
-        x: Math.random() * 100,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        delay: Math.random() * 2,
-        size: Math.random() * 10 + 5
-      }));
-      setParticles(newParticles);
-      
-      const timer = setTimeout(onClose, 6000);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 overflow-hidden">
-      <div className="absolute inset-0 bg-blue-600/95 dark:bg-slate-950/98 backdrop-blur-xl animate-in fade-in duration-500"></div>
-      
-      <div className="absolute inset-0 pointer-events-none">
-        {particles.map(p => (
-          <div 
-            key={p.id}
-            className="absolute top-[-20px] rounded-full animate-confetti"
-            style={{
-              left: `${p.x}%`,
-              backgroundColor: p.color,
-              width: `${p.size}px`,
-              height: `${p.size}px`,
-              animationDelay: `${p.delay}s`,
-              animationDuration: `${Math.random() * 2 + 3}s`
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="relative z-10 w-full max-w-sm text-center animate-in zoom-in fade-in duration-500">
-        <div className="w-24 h-24 bg-white/20 rounded-[2.5rem] flex items-center justify-center text-white text-5xl mb-8 mx-auto backdrop-blur-xl border border-white/30 shadow-2xl animate-bounce">
-          <i className="fa-solid fa-trophy"></i>
-        </div>
-        
-        <h2 className="text-4xl font-black text-white mb-4 tracking-tight drop-shadow-lg">{title}</h2>
-        <p className="text-blue-100 text-lg font-bold leading-relaxed mb-12 px-4 drop-shadow-md">
-          {message}
-        </p>
-        
-        <button 
-          onClick={onClose}
-          className="px-12 py-5 bg-white text-blue-600 font-black rounded-3xl shadow-2xl shadow-blue-900/40 active:scale-95 transition-all text-xs uppercase tracking-[0.2em]"
-        >
-          FANTASTIC!
-        </button>
-      </div>
-
-      <style>{`
-        @keyframes confetti {
-          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-          100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-        }
-        .animate-confetti {
-          animation-name: confetti;
-          animation-timing-function: cubic-bezier(.37,0,.63,1);
-          animation-fill-mode: forwards;
-        }
-      `}</style>
     </div>
   );
 };

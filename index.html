@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,12 +17,14 @@
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
       
+      /* Global Reset & Scrollbar Hiding */
       * {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
       }
+
       *::-webkit-scrollbar {
-        display: none;
+        display: none; /* Chrome, Safari, Opera */
       }
 
       body {
@@ -29,82 +32,114 @@
         background-color: #f8fafc;
         -webkit-tap-highlight-color: transparent;
         transition: background-color 0.5s ease;
-        overflow: hidden;
-      }
-      .dark body {
-        background-color: #020617;
-      }
-      
-      #splash-screen {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background-color: #f8fafc;
-        z-index: 9999;
-        transition: opacity 0.5s ease-out;
-      }
-      .dark #splash-screen {
-        background-color: #020617;
-      }
-      .pulse-icon {
-        width: 80px;
-        height: 80px;
-        background: #2563eb;
-        border-radius: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 32px;
-        box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.2);
-        animation: splash-pulse 2s infinite ease-in-out;
-      }
-      @keyframes splash-pulse {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.1); opacity: 0.8; }
-      }
-      .splash-text {
-        margin-top: 24px;
-        font-weight: 900;
-        color: #1e293b;
-        letter-spacing: -0.025em;
-        font-size: 20px;
-      }
-      .dark .splash-text {
-        color: #f8fafc;
+        overflow: hidden; 
       }
 
-      @keyframes slideUp {
-        from { transform: translateY(20px); opacity: 0; }
+      .dark body {
+        background-color: #020617; /* slate-950 */
+      }
+
+      .safe-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      
+      @keyframes slideFromTop {
+        from { transform: translateY(-30px); opacity: 0; }
         to { transform: translateY(0); opacity: 1; }
       }
-      .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+      @keyframes popSuccess {
+        0% { transform: scale(0.9); opacity: 0; }
+        50% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+
+      @keyframes confettiFall {
+        0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+      }
+
+      .animate-screen-entry {
+        animation: slideFromTop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .animate-pop {
+        animation: popSuccess 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      }
+
+      .confetti {
+        position: absolute; width: 10px; height: 10px; top: -10px; z-index: 1000;
+        animation: confettiFall 3s linear forwards;
+      }
+
+      /* Hide arrows/spin-buttons in number inputs */
+      input::-webkit-outer-spin-button,
+      input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+      input[type=number] { -moz-appearance: textfield; }
+
+      /* Custom styling for date input */
+      input[type="date"] { position: relative; }
+      input[type="date"]::-webkit-calendar-picker-indicator {
+        background: transparent; bottom: 0; color: transparent; cursor: pointer; height: auto;
+        left: 0; position: absolute; right: 0; top: 0; width: auto;
+      }
+
+      /* PRINT STYLES */
+      @media print {
+        header, nav, main button, .no-print {
+          display: none !important;
+        }
+        body {
+          background: white !important;
+          color: black !important;
+          overflow: visible !important;
+        }
+        #root {
+          height: auto !important;
+          overflow: visible !important;
+        }
+        main {
+          height: auto !important;
+          overflow: visible !important;
+          padding: 0 !important;
+        }
+        .print-only {
+          display: block !important;
+        }
+        .printable-page {
+          padding: 20px;
+          background: white;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 20px;
+        }
+        th, td {
+          border: 1px solid #e2e8f0;
+          padding: 10px;
+          text-align: left;
+          font-size: 12px;
+        }
+        th { background: #f8fafc; font-weight: bold; }
+      }
+      .print-only { display: none; }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+    "recharts": "https://esm.sh/recharts@2.12.0?external=react,react-dom",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
 </head>
 <body>
-    <div id="root">
-        <div id="splash-screen">
-            <div class="pulse-icon">
-                <i class="fa-solid fa-wallet"></i>
-            </div>
-            <div class="splash-text">Local Ledger</div>
-        </div>
-    </div>
-    <script type="module" src="./index.tsx"></script>
+    <div id="root"></div>
 </body>
 </html>

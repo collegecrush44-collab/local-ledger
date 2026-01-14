@@ -1,7 +1,10 @@
+
 export type IncomeCategory = string;
 
 export interface UserProfile {
   name: string;
+  profileImage?: string;
+  dob?: string; // For PIN recovery
 }
 
 export interface UserSettings {
@@ -11,10 +14,11 @@ export interface UserSettings {
   biometricsEnabled: boolean;
   theme: 'light' | 'dark';
   hasCompletedOnboarding: boolean;
+  notificationsEnabled: boolean;
   customIncomeCategories: string[];
   customExpenseCategories: string[];
   customReminderTypes: string[];
-  lastBackupDate?: string; // New: track for offline safety
+  customReminderCategories: string[];
 }
 
 export interface Income {
@@ -34,14 +38,25 @@ export interface Expense {
   notes?: string;
 }
 
+export type LoanType = 'Personal' | 'Vehicle' | 'Home' | 'Education' | 'Other';
+
+export interface LoanPayment {
+  id: string;
+  amount: number;
+  date: string;
+}
+
 export interface Loan {
   id: string;
   name: string;
-  totalAmount: number;
-  emi: number;
+  type: LoanType;
+  totalAmount: number; // Principal
   startDate: string;
   endDate: string;
-  paidMonths: string[]; // Stores months in "YYYY-MM" format
+  emiAmount: number;
+  dueDay: number;
+  tenureMonths: number;
+  payments: LoanPayment[];
   notes?: string;
 }
 
@@ -49,7 +64,7 @@ export interface Payment {
   id: string;
   amount: number;
   date: string;
-  imageUrl?: string;
+  imageUrls?: string[];
 }
 
 export interface BorrowedMoney {
@@ -59,7 +74,8 @@ export interface BorrowedMoney {
   totalPaid: number;
   startDate: string;
   payments: Payment[];
-  imageUrl?: string;
+  imageUrls?: string[];
+  notes?: string;
 }
 
 export interface ChitFundEntry {
@@ -99,18 +115,27 @@ export interface OtherSaving {
 }
 
 export type ReminderFrequency = 'One-time' | 'Weekly' | 'Monthly' | 'Yearly';
-export type ReminderType = string;
+export type ReminderType = 'Payment' | 'Subscription' | 'Custom';
 
 export interface FinancialReminder {
   id: string;
   type: ReminderType;
+  category: string;
   title: string;
   amount?: number;
   dueDate: string;
-  reminderDate?: string;
+  reminderDate: string;
   frequency: ReminderFrequency;
   isCompleted: boolean;
   notes?: string;
+}
+
+export interface NotificationEntry {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  type: 'payment' | 'alert' | 'success';
 }
 
 export interface FinanceData {
@@ -123,6 +148,7 @@ export interface FinanceData {
   reminders: FinancialReminder[];
   chitFunds: ChitFund[];
   otherSavings: OtherSaving[];
+  notificationHistory: NotificationEntry[];
 }
 
 export type ViewType = 'dashboard' | 'income' | 'expenses' | 'loans' | 'reminders' | 'profile' | 'chits';

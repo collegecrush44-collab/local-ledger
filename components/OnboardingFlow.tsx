@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, Heading, Button, SubHeading } from './Shared.tsx';
 import { UserProfile, UserSettings } from '../types.ts';
@@ -15,13 +16,12 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, currentSett
   const prevStep = () => setStep(prev => Math.max(0, prev - 1));
 
   const handleFinish = () => {
+    if (name.trim().length < 3) return;
     onComplete(
-      { name: name.trim() || 'Guest User' },
+      { name: name || 'Guest User' },
       { ...currentSettings, hasCompletedOnboarding: true }
     );
   };
-
-  const isNameValid = name.trim().length >= 3;
 
   const steps = [
     // Welcome
@@ -64,6 +64,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, currentSett
   ];
 
   const current = steps[step];
+  const isNameValid = name.trim().length >= 3;
 
   return (
     <div className="fixed inset-0 z-[200] bg-white dark:bg-slate-950 overflow-y-auto safe-bottom">
@@ -98,14 +99,12 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, currentSett
                 placeholder="Enter your name"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl px-6 py-5 text-slate-900 dark:text-white font-black text-center focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/20 outline-none transition-all"
+                className={`w-full bg-slate-50 dark:bg-slate-900 border ${!isNameValid && name ? 'border-rose-300' : 'border-slate-200 dark:border-slate-800'} rounded-3xl px-6 py-5 text-slate-900 dark:text-white font-black text-center focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/20 outline-none transition-all`}
               />
-              <div className="flex flex-col items-center gap-1">
-                <p className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${isNameValid ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-500'}`}>
-                  {isNameValid ? 'Name accepted!' : 'Minimum 3 letters required'}
-                </p>
-                <p className="text-[9px] text-slate-300 dark:text-slate-700 font-bold uppercase tracking-widest">No email or phone number required</p>
-              </div>
+              {!isNameValid && name && (
+                <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest animate-pulse">Name must be at least 3 letters</p>
+              )}
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest">No email or phone number required</p>
             </div>
           )}
 
@@ -125,8 +124,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, currentSett
           {step < steps.length - 1 ? (
             <button 
               onClick={nextStep}
+              className={`w-full py-5 ${current.isForm && !isNameValid ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-blue-600 text-white shadow-xl shadow-blue-500/20 active:scale-95'} font-black rounded-3xl transition-all text-xs uppercase tracking-[0.2em]`}
               disabled={current.isForm && !isNameValid}
-              className={`w-full py-5 bg-blue-600 text-white font-black rounded-3xl shadow-xl shadow-blue-500/20 active:scale-95 transition-all text-xs uppercase tracking-[0.2em] ${current.isForm && !isNameValid ? 'opacity-40 grayscale cursor-not-allowed' : ''}`}
             >
               CONTINUE
             </button>
