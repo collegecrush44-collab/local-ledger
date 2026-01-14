@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useFinance } from './hooks/useFinance.ts';
 import { ViewType, UserSettings, FinancialReminder, NotificationEntry } from './types.ts';
@@ -242,7 +241,7 @@ const App: React.FC = () => {
       <header className="flex-none sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2" onClick={() => setActiveView('dashboard')} style={{ cursor: 'pointer' }}>
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white"><i className="fa-solid fa-wallet"></i></div>
-          <span className="text-xl font-black tracking-tight">Local Ledger</span>
+          <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Local Ledger</span>
         </div>
         <div className="flex items-center gap-2">
           {!isOnline && <div className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] font-bold">OFFLINE</div>}
