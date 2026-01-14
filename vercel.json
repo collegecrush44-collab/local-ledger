@@ -1,11 +1,8 @@
 {
-  "version": 2,
-  "public": true,
   "cleanUrls": true,
-  "framework": null,
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/sw.js", "destination": "/sw.js" },
+    { "source": "/manifest.json", "destination": "/manifest.json" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
