@@ -241,7 +241,7 @@ const App: React.FC = () => {
       <header className="flex-none sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2" onClick={() => setActiveView('dashboard')} style={{ cursor: 'pointer' }}>
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white"><i className="fa-solid fa-wallet"></i></div>
-          <span className="text-xl font-black tracking-tight text-blue-600 dark:text-white">Local Ledger</span>
+          <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Local Ledger</span>
         </div>
         <div className="flex items-center gap-2">
           {!isOnline && <div className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] font-bold">OFFLINE</div>}
@@ -276,7 +276,7 @@ const NotificationGroup = ({ title, items, color, onClick }: any) => (
   <div className="space-y-2">
     <p className={`text-[10px] font-black tracking-widest uppercase ml-2 ${color === 'rose' ? 'text-rose-500' : 'text-indigo-500'}`}>{title}</p>
     {items.map((item: any, i: number) => (
-      <div key={i} onClick={onClick} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between cursor-pointer">
+      <div key={i} onClick={item.onClick || onClick} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between cursor-pointer">
         <span className="text-xs font-bold">{item.title}</span>
         <i className="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
       </div>
